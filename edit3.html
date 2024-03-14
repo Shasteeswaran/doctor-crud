@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BronchAI - Patient Search</title>     
+    <link rel="icon" href="img/icon.png">     
+    <link rel="sytlesheet"      
+    href="">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+    
+        body {
+            background-image: url('img/signup-bg.jpg');
+            opacity: 70%;
+        }
+    
+        h1 {
+            color: #1A76D1;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 750;
+            font-size: 35px;
+            padding-left: 20px;
+            display: inline-block;
+            vertical-align: top;
+            margin-right: 20px;
+        }
+    
+        #searchForm {
+            display: inline-block;
+            vertical-align: top;
+            margin-left: 20px;
+            padding-top: 35px;
+            border-radius: 10px;
+        }
+    
+        form label {
+            color: #1A76D1;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+        }
+    
+        form input[type="text"] {
+            width: 300px;
+            height: 25px;
+            padding: 4px;
+            margin-right: 5px;
+            border: white;
+            border-radius: 5px;
+        }
+    
+        form input[placeholder="Enter your name"] {
+            font: 'Poppins', sans-serif;
+            font-size: 17px;
+            font-weight: bold;
+        }
+    
+        form button {
+            padding: 10px 20px;
+            background-color: #1A76D1;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+    
+        .search-button {
+            color: #fff;
+            background: #1a76d1;
+            border-radius: 4px;
+            padding: 8px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.3s, color 0.3s;
+            border: none;
+        }
+    
+        .search-button {
+            background: #1A76D1;
+            color: #fff;
+        }
+        .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh; /* Adjust as needed */
+    }
+
+    .result-container {
+        text-align: center;
+        margin-top: 20px; 
+    }
+    #suggestions {
+        font-family: 'Poppins', sans-serif; 
+        font-size: 15px;
+        font-weight: 600; 
+        color: #333;
+    }
+    #result {
+        background-color: rgba(255, 255, 255, 0.8); 
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+        /*max-width: 100%;*/
+        width: 720px; 
+        font-family: 'Poppins', sans-serif; 
+        font-size: 16px; 
+        font-weight: 550;
+        color: #333;
+    }
+    button {
+        color: #fff;
+        background: #1a76d1;
+        border-radius: 4px;
+        padding: 8px 20px;
+        font-size: 14px;
+        font-weight: 500;
+        transition: background-color 0.3s, color 0.3s;
+        border: none;
+        margin-right: 10px;
+    }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+    <h1>Patient Search</h1>
+    <form id="searchForm"> 
+        <label for="name"></label> 
+        <input type="text" id="name" name="name" placeholder="Enter your name" oninput="searchPatients(this.value)"> 
+        <button type="button" class="search-button" onclick="searchPatient()">Search</button>
+        <div id="suggestions"></div>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        function searchPatients(namePrefix) {
+            const name = namePrefix.trim();
+
+            if (name === '') {
+                document.getElementById('suggestions').innerHTML = '';
+                return;
+            }
+
+            fetch(`/search?namePrefix=${name}`)
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Network response was not ok.');
+            })
+            .then(data => {
+                displaySuggestions(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('suggestions').innerHTML = '<p>No patients available in this name.</p>';
+            });
+        }
+
+        function displaySuggestions(data) {
+            const suggestionsDiv = document.getElementById('suggestions');
+
+            if (data.length === 0) {
+                suggestionsDiv.innerHTML = '<p>No matching patients found.</p>';
+                return;
+            }
+
+            let html = '<p>Suggestions:</p>';
+            html += '<ul>';
+            data.forEach(patient => {
+                html += `<li onclick="selectPatient('${patient.name}')">${patient.name}</li>`;
+            });
+            html += '</ul>';
+
+            suggestionsDiv.innerHTML = html;
+        }
+
+        function selectPatient(name) {
+            document.getElementById('name').value = name;
+            document.getElementById('suggestions').innerHTML = '';
+        }
+
+        function searchPatient() {
+            const name = document.getElementById('name').value.trim();
+
+            if (name === '') {
+                alert('Please enter a name to search.');
+                return;
+            }
+
+            fetch(`/search/patient?name=${name}`)
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Network response was not ok.');
+            })
+            .then(data => {
+                displayResult(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = '<p>Error fetching data. Please try again later.</p>';
+            });
+        }
+
+        function displayResult(data) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '';
+
+            if (!data) {
+                resultDiv.innerHTML = '<p>No patient found.</p>';
+                return;
+            }
+
+            let html = '<h2>Patient Details</h2>';
+            html += `<p>Name : ${data.name}</p>`;
+            html += `<p>Phone Number : ${data.phone_number}</p>`;
+            html += `<p>Age : ${data.age}</p>`;
+            html += `<p>Gender : ${data.gender}</p>`;
+            html += `<p>Consultation : ${data.consultation}</p>`;
+            html += `<p>Input Image : <img src="${data.imagei}" alt="imagei"></p>`;             
+            html += `<p>Output Image : <img src="${data.imageo}" alt="imageo"></p>`;
+
+            // Pass patient ID to edit, delete, and add functions
+            html += `<button onclick="editPatient('${data._id}')">Edit</button>`;
+            html += `<button onclick="deletePatient('${data._id}')">Delete</button>`;
+            html += `<button onclick="addPatient('${data._id}')">Add</button>`;
+
+            resultDiv.innerHTML = html;
+        }
+
+        function editPatient(id) {
+            // Redirect to the edit page with the patient's ID as a URL parameter
+            window.location.href = `/edit4_1.html?id=${id}`;
+        }
+
+        function deletePatient(id) {
+            // Send a DELETE request to the backend to delete the patient
+            fetch(`/delete/patient/${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Network response was not ok.');
+            })
+            .then(data => {
+                // Display success message or perform any other action
+                alert('Patient deleted successfully.');
+                // You may also want to update the UI to reflect the deletion
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Display error message or perform any other action
+                alert('Error deleting patient.');
+            });
+        }
+
+        function addPatient(id) {
+            // Implement add functionality
+            alert(`Add patient with ID: ${id}`);
+        }
+
+        function addPatient(id) {
+            // Implement add functionality
+            alert(`Add patient with ID: ${id}`);
+        }
+    </script>
+</body>
+</html>
